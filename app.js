@@ -18,8 +18,8 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 const corsOptions = {
-    origin: "http://localhost:5173/",
-    optionSucessStatus: 200
+    origin: "http://localhost:5173",
+    optionsSuccessStatus: 200
 }
 
 app.use(cors(corsOptions))
