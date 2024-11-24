@@ -1,4 +1,19 @@
+import sharp from 'sharp';
 import db from '../services/firebaseService.js'
+import multer from 'multer';
+import path from 'path';
+import fs from "fs"
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/assets/images/uploads/avatars');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storage })
 
 const getAllUsers = async (req, res) => {
     try {
@@ -13,25 +28,49 @@ const getAllUsers = async (req, res) => {
 const createUser = async (req, res) => {
     try {
         const newUser = req.body;
-        const snapshot = await db.collection('users').where('username', '==', newUser.username).get();
 
+
+        const snapshot = await db.collection('users').where('username', '==', newUser.username).get();
         if (!snapshot.empty) {
-            return res.status(400).json({ message: 'User already exists' })
+            return res.status(400).json({ message: 'User already exists' });
         }
+
+
+        if (!newUser.image || !newUser.image.png || !newUser.image.webp) {
+            return res.status(400).json({ message: 'No image provided' });
+        }
+
+
+        const fileName = `image-${newUser.username}`;
+        const uploadDir = 'public/assets/images/avatars';
+
+        const pngPath = path.join(uploadDir, `${fileName}.png`);
+        const webpPath = path.join(uploadDir, `${fileName}.webp`);
+
+
+        const pngData = newUser.image.png.replace(/^data:image\/png;base64,/, '');
+        fs.writeFileSync(pngPath, Buffer.from(pngData, 'base64'));
+
+
+        const webpData = newUser.image.webp.replace(/^data:image\/webp;base64,/, '');
+        fs.writeFileSync(webpPath, Buffer.from(webpData, 'base64'));
+
 
         const images = {
-            png: `/assets/images/avatars/image-${newUser.username}.png`,
-            webp: `/assets/images/avatars/image-${newUser.username}.webp`
-        }
+            png: `./assets/images/avatars/${fileName}.png`,
+            webp: `./assets/images/avatars/${fileName}.webp`
+        };
 
-        newUser.images = images
+        newUser.images = images;
 
-        const docRef = await db.collection('users').add(newUser)
-        res.status(201).json({ id: docRef.id, ...newUser })
+
+        const docRef = await db.collection('users').add(newUser);
+        res.status(201).json({ id: docRef.id, ...newUser });
     } catch (error) {
-        res.status(500).json({ error: error.message })
+        res.status(500).json({ error: error.message });
     }
-}
+};
+
 
 const getUserByUsername = async (req, res) => {
     try {
@@ -53,5 +92,5 @@ const getUserByUsername = async (req, res) => {
 };
 
 export {
-    getAllUsers, createUser, getUserByUsername
+    getAllUsers, createUser, getUserByUsername, upload
 }
