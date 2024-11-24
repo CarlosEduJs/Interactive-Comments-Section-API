@@ -18,7 +18,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: "https://interactive-comment-section-app.vercel.app",
     optionsSuccessStatus: 200
 }
 
